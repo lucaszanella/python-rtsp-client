@@ -23,7 +23,7 @@ TRANSPORT_TYPE_MAP  = {
             'rtp_over_tcp' : 'MP2T/RTP/TCP;%s;interleaved=0-1, ',
             'ts_over_udp'  : 'MP2T/UDP;%s;destination=%s;client_port=%s, ',
             'rtp_over_udp' : 'MP2T/RTP/UDP;%s;destination=%s;client_port=%s, '
-            }
+                      }
 
 RTSP_VERSION        = 'RTSP/1.0'
 DEFAULT_USERAGENT   = 'Python Rtsp Client 1.0'
@@ -46,7 +46,7 @@ class RTSPClient(threading.Thread):
     HEARTBEAT_INTERVAL  = 10 # 10s
     CLIENT_PORT_RANGE   = '10014-10015'
 
-    def __init__(self, url, dest_ip='', callback=None, socks=None, process_describe_response=None):
+    def __init__(self, url, dest_ip='', callback=None, socks=None):
         threading.Thread.__init__(self)
         self._auth        = None
         self._callback    = callback or (lambda x: x)
@@ -69,7 +69,6 @@ class RTSPClient(threading.Thread):
         self.response_buf = []
         self.running      = True
         self.state        = None
-        self.process_describe_response = process_describe_response
         self.track_id_lst = []
         if '.sdp' not in self._parsed_url.path.lower():
             self.cur_range = 'npt=0.00000-' # On demand starts from the beginning
@@ -256,10 +255,8 @@ class RTSPClient(threading.Thread):
         '''Process the response message'''
         status, headers, body = self._parse_response(msg)
         rsp_cseq = int(headers['cseq'])
-        
         if self._cseq_map[rsp_cseq] != 'GET_PARAMETER':
             self._callback(self._get_time_str() + '\n' + msg)
-        
         if status == 401 and not self._auth:
             self._add_auth(headers['www-authenticate'])
             self.do_replay_request()
@@ -271,19 +268,12 @@ class RTSPClient(threading.Thread):
             self._update_content_base(msg)
             self._parse_track_id(body)
             self.state = 'describe'
-            if self.process_describe_response:
-                self.process_describe_response(body)
-                #Put here the TRANSPORTS decision
-                print('should decide a transport')
         elif self._cseq_map[rsp_cseq] == 'SETUP':
             self._session_id = headers['session']
             self.send_heart_beat_msg()
             self.state = 'setup'
         elif self._cseq_map[rsp_cseq] == 'PLAY':
             self.state = 'play'
-        else:
-            pass
-            #print(msg)
 
     def _process_announce(self, msg):
         '''Processes the ANNOUNCE notification message'''
@@ -381,7 +371,8 @@ class RTSPClient(threading.Thread):
         if isinstance(track_id_str,str):
             self._sendmsg('SETUP', self._orig_url+'/'+track_id_str, headers)
         elif isinstance(track_id_str, int):
-            self._sendmsg('SETUP', self._orig_url + '/' +
+            self._sendmsg('SETUP', self._orig_url +
+                                   '/' +
                                    self.track_id_lst[track_id_str], headers)
         elif self.track_id_lst:
             for track in self.track_id_lst:

@@ -181,11 +181,7 @@ class RTSPClient(threading.Thread):
         msg = ''
         if self.cache():
             tmp = self.cache()
-            try:
-            	(msg, tmp) = tmp.split(HEADER_END_STR, 1)
-            except ValueError as e:
-            	self._callback(self._get_time_str() + '\n' + tmp)
-            	raise RTSPError('Response did not contain double CRLF')
+            (msg, tmp) = tmp.split(HEADER_END_STR, 1) if tmp.splitlines()==2 else [tmp, '']
             content_length = self._get_content_length(msg)
             msg += HEADER_END_STR + tmp[:content_length]
             self.set_cache(tmp[content_length:])
