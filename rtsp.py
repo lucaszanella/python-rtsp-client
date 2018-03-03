@@ -46,7 +46,7 @@ class RTSPClient(threading.Thread):
     HEARTBEAT_INTERVAL  = 10 # 10s
     CLIENT_PORT_RANGE   = '10014-10015'
 
-    def __init__(self, url, dest_ip='', callback=None, socks=None, process_describe_response=None):
+    def __init__(self, url, dest_ip='', callback=None, socks=None, choose_transport=None):
         threading.Thread.__init__(self)
         self._auth        = None
         self._callback    = callback or (lambda x: x)
