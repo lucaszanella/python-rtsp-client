@@ -21,9 +21,9 @@ except ImportError:
 TRANSPORT_TYPE_MAP  = {
             'ts_over_tcp'  : 'MP2T/TCP;%s;interleaved=0-1, ',
             'rtp_over_tcp' : 'MP2T/RTP/TCP;%s;interleaved=0-1, ',
+            'rtp_avp_tcp'  : 'RTP/AVP/TCP;%s;interleaved=0-1 ',
             'ts_over_udp'  : 'MP2T/UDP;%s;destination=%s;client_port=%s, ',
             'rtp_over_udp' : 'MP2T/RTP/UDP;%s;destination=%s;client_port=%s, ',
-            'rtp_avp_tcp'  : 'RTP/AVP/TCP;%s;interleaved=0-1, '
             }
 
 RTSP_VERSION        = 'RTSP/1.0'
@@ -315,6 +315,7 @@ class RTSPClient(threading.Thread):
     def _parse_track_id(self, sdp):
         '''Resolves a string of the form trackID = 2 from sdp'''
         m = re.findall(r'a=control:(?P<trackid>[\w=\d]+)', sdp, re.S)
+        #m = re.findall(r'a=control:\w+(?P<trackid>[\d]+)', sdp, re.S)
         self.track_id_lst = m
 
     def _next_seq(self):
