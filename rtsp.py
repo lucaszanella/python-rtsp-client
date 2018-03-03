@@ -22,7 +22,8 @@ TRANSPORT_TYPE_MAP  = {
             'ts_over_tcp'  : 'MP2T/TCP;%s;interleaved=0-1, ',
             'rtp_over_tcp' : 'MP2T/RTP/TCP;%s;interleaved=0-1, ',
             'ts_over_udp'  : 'MP2T/UDP;%s;destination=%s;client_port=%s, ',
-            'rtp_over_udp' : 'MP2T/RTP/UDP;%s;destination=%s;client_port=%s, '
+            'rtp_over_udp' : 'MP2T/RTP/UDP;%s;destination=%s;client_port=%s, ',
+            'rtp_avp_tcp'  : 'RTP/AVP/TCP;%s;interleaved=0-1, '
             }
 
 RTSP_VERSION        = 'RTSP/1.0'
@@ -69,7 +70,7 @@ class RTSPClient(threading.Thread):
         self.response_buf = []
         self.running      = True
         self.state        = None
-        self.process_describe_response = process_describe_response
+        self.choose_transport = choose_transport
         self.track_id_lst = []
         if '.sdp' not in self._parsed_url.path.lower():
             self.cur_range = 'npt=0.00000-' # On demand starts from the beginning
@@ -271,10 +272,8 @@ class RTSPClient(threading.Thread):
             self._update_content_base(msg)
             self._parse_track_id(body)
             self.state = 'describe'
-            if self.process_describe_response:
-                self.process_describe_response(body)
-                #Put here the TRANSPORTS decision
-                print('should decide a transport')
+            if self.choose_transport:
+                self.TRANSPORT_TYPE_LIST = self.choose_transport(body)
         elif self._cseq_map[rsp_cseq] == 'SETUP':
             self._session_id = headers['session']
             self.send_heart_beat_msg()
